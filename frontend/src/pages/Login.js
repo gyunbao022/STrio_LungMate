@@ -12,8 +12,10 @@ function Login({ onLogin, onNavigate }) {
 
  if (username === "admin" && password === "1234") {
         onLogin({ memberName: '관리자', role: 'ADMIN' });
-    } else if (username === "test" && password === "1234") {
-        onLogin({ memberName: '테스트유저', role: 'DOCTOR' });
+    } else if (username === "test1" && password === "1234") {
+        onLogin({ memberName: 'xray유저', role: 'XRAY_OPERATOR' });
+    } else if (username === "test2" && password === "1234") {
+        onLogin({ memberName: '의사유저', role: 'DOCTOR' });
     } else {
         setError('아이디 또는 비밀번호가 일치하지 않습니다.');
     }
