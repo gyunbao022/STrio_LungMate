@@ -6,7 +6,6 @@ function Navbar({ currentUser, onNavigate, onLogout }) {
         // 비로그인 사용자를 위한 메뉴
         const commonMenus = [
             { name: '메인', page: 'main' },
-            { name: '공지사항', page: 'notice' }
         ];
 
         // 로그인한 사용자일 경우
@@ -20,7 +19,8 @@ function Navbar({ currentUser, onNavigate, onLogout }) {
                 case 'DOCTOR':
                     return [ ...loggedInUserMenus, { name: '판독 대기 리스트', page: 'diagnosis-list' }];
                 case 'XRAY_OPERATOR':
-                    return [ ...loggedInUserMenus, { name: 'X-Ray 업로드', page: 'diagnosis' }, { name: '업로드 내역', page: 'upload-history' }];
+                    return [ ...loggedInUserMenus, { name: 'X-Ray 업로드', page: 'diagnosis' },
+                                                   { name: '업로드 내역', page: 'upload-history' }];
                 case 'ADMIN':
                     return [
                         { name: '메인', page: 'main' },

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ImageUploader from './ImageUploader';
 import ResultCard from './ResultCard';
+import placeholderImage from '../../images/image1.jpg';
 
 // Gemini API 호출 로직 (원래는 별도 api.js 파일로 분리하는 것이 좋습니다)
 async function callGeminiAPI(systemPrompt, userQuery) {
@@ -20,12 +21,26 @@ async function callGeminiAPI(systemPrompt, userQuery) {
     return result.candidates?.[0]?.content?.parts?.[0]?.text;
 }
 
-function Diagnosis() {
+function Diagnosis({ xrayId }) { // xrayId를 prop으로 받습니다.
     const [imageFile, setImageFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [analysisResult, setAnalysisResult] = useState(null);
     const [summaryResult, setSummaryResult] = useState(null);
     const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+
+    useEffect(() => {
+        if (xrayId) {
+            // xrayId가 있으면, 해당 ID로 판독 정보를 불러옵니다.
+            // 지금은 실제 API가 없으므로 더미 데이터로 시뮬레이션합니다.
+            setIsLoading(true);
+            setTimeout(() => {
+                setImageFile(placeholderImage);
+                setAnalysisResult({ isPneumonia: true, confidence: 0.92 });
+                setSummaryResult(`X-Ray ID: ${xrayId}\n\n**Findings:**\n- Opacity in the right lower lobe.\n\n**Impression:**\n- Findings are consistent with pneumonia.`);
+                setIsLoading(false);
+            }, 1000);
+        }
+    }, [xrayId]);
 
     const handleImageSelect = (file) => {
         setImageFile(file);
@@ -71,7 +86,7 @@ function Diagnosis() {
                     AI 폐렴 진단 어시스턴트
                 </h1>
                 <p className="text-gray-400 mt-2 max-w-2xl mx-auto">
-                    흉부 X-ray 이미지를 업로드하여 폐렴 가능성을 확인해 보세요.
+                    {xrayId ? `X-Ray ID: ${xrayId}에 대한 판독 정보입니다.` : '흉부 X-ray 이미지를 업로드하여 폐렴 가능성을 확인해 보세요.'}
                 </p>
             </header>
             <main className="w-full glassmorphism rounded-2xl shadow-lg p-6 sm:p-8">
@@ -95,4 +110,3 @@ function Diagnosis() {
 }
 
 export default Diagnosis;
-

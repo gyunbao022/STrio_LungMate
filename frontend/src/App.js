@@ -13,11 +13,14 @@ import XRayUpload from './pages/XRayUpload';
 import Profile from './pages/Profile';
 import DiagnosisList from './pages/DiagnosisList';
 import UploadHistory from './pages/UploadHistory';
+import Diagnosis from './components/diagnosis/Diagnosis';
 
 // --- 최상위 App 컴포넌트 ---
 function App() {
     const [currentPage, setCurrentPage] = useState('main');
     const [currentUser, setCurrentUser] = useState(null);
+    const [selectedXrayId, setSelectedXrayId] = useState(null);
+
 
     const handleLogin = (userData) => {
         setCurrentUser(userData);
@@ -29,8 +32,11 @@ function App() {
         setCurrentPage('main');
     };
 
-    const handleNavigate = (page) => {
+    const handleNavigate = (page, payload) => {
         setCurrentPage(page);
+        if (payload && payload.xrayId) {
+            setSelectedXrayId(payload.xrayId);
+        }
     };
 
     const renderPage = () => {
@@ -59,8 +65,10 @@ function App() {
                 return currentUser.role === 'ADMIN' ? <MemberManagement /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
             case 'diagnosis':
                 return <XRayUpload currentUser={currentUser} />;
+            case 'view-diagnosis':
+                return <Diagnosis xrayId={selectedXrayId} currentUser={currentUser} onNavigate={handleNavigate} />;
             case 'diagnosis-list':
-                return currentUser.role === 'DOCTOR' || currentUser.role === 'ADMIN' ? <DiagnosisList /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
+                return currentUser.role === 'DOCTOR' || currentUser.role === 'ADMIN' ? <DiagnosisList onNavigate={handleNavigate} /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
             case 'xray-upload':
                  return currentUser.role === 'XRAY_OPERATOR' ? <XRayUpload currentUser={currentUser} /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
             case 'upload-history':

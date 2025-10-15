@@ -18,7 +18,7 @@ const diagnosisData = [
   },
 ];
 
-function DiagnosisList() {
+function DiagnosisList({ onNavigate }) {
   return (
     // 전체 레이아웃을 감싸는 컨테이너입니다. 이미지의 어두운 배경색과 유사하게 스타일링합니다.
     <div className="bg-[#1a202c] text-white p-8 rounded-lg min-h-screen">
@@ -54,7 +54,7 @@ function DiagnosisList() {
                   </span>
                 </td>
                 <td className="p-4 text-right">
-                  <button className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-5 rounded">
+                  <button onClick={() => onNavigate('view-diagnosis', { xrayId: item.xrayId })} className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-5 rounded">
                     열기
                   </button>
                 </td>
