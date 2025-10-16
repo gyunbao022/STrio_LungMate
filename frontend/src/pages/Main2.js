@@ -1,27 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// 요청하신 예시 공지사항 데이터입니다.
+const sampleNotices = [
+    {
+        noticeNo: 3,
+        noticeTitle: '개인정보처리방침 개정 안내',
+        noticeContent: `안녕하세요, STrio입니다. \n\nSTrio 서비스의 개인정보처리방침이 2025년 11월 1일자로 개정될 예정입니다. \n\n주요 개정 내용은 다음과 같습니다. \n- 개인정보 수집 항목 구체화 \n- 제3자 정보 제공 관련 내용 보강 \n\n자세한 내용은 공지사항의 첨부파일을 확인해주시기 바랍니다. \n\n감사합니다.`,
+        createDate: new Date('2025-10-18T09:00:00'),
+    },
+    {
+        noticeNo: 2,
+        noticeTitle: '서버 점검 안내 (10/20 02:00 ~ 04:00)',
+        noticeContent: `안녕하세요, STrio입니다. \n\n보다 안정적인 서비스 제공을 위해 아래와 같이 서버 점검을 실시할 예정입니다. \n\n- 점검 일시: 2025년 10월 20일(월) 02:00 ~ 04:00 (2시간) \n- 점검 내용: 서비스 안정화 및 성능 개선 작업 \n\n점검 시간 동안 서비스 이용이 일시적으로 중단될 수 있으니 양해 부탁드립니다. \n\n감사합니다.`,
+        createDate: new Date('2025-10-17T14:30:00'),
+    },
+    {
+        noticeNo: 1,
+        noticeTitle: 'STrio 서비스 정식 오픈 안내',
+        noticeContent: `안녕하세요, STrio입니다. \n\n오랜 기간의 준비 끝에 STrio가 정식으로 서비스를 오픈합니다. \n\nSTrio는 최신 AI 기술을 활용하여 의료 영상 분석을 돕는 서비스입니다. \n\n많은 관심과 이용 부탁드립니다. \n\n감사합니다.`,
+        createDate: new Date('2025-10-16T10:00:00'),
+    },
+];
+
+
 // App.js에서 onNavigate 함수를 props로 받아야 합니다.
 function Main2({ currentUser, onNavigate }) {
-    const [notices, setNotices] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [notices, setNotices] = useState(sampleNotices.slice(0, 5)); //useState([]);
+    const [loading, setLoading] = useState(false); //현재는 예시 데이터를 사용하고, 로딩 상태는 false로 시작합니다.
 
-    useEffect(() => {
-        const fetchNotices = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get('/board/list/1');
-                setNotices((response.data.boardList || []).slice(0, 5));
-            } catch (error) {
-                console.error("공지사항 로딩에 실패했습니다:", error);
-                setNotices([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+    // useEffect(() => {
+    //     const fetchNotices = async () => {
+    //         setLoading(true);
+    //         try {
+    //             const response = await axios.get('/board/list/1');
+    //             setNotices((response.data.boardList || []).slice(0, 5));
+    //         } catch (error) {
+    //             console.error("공지사항 로딩에 실패했습니다:", error);
+    //             setNotices([]);
+    //         } finally {
+    //             setLoading(false);
+    //         }
+    //     };
 
-        fetchNotices();
-    }, []);
+    //     fetchNotices();
+    // }, []);
 
     return (
         <div className="text-center">
