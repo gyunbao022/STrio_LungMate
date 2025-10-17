@@ -4,13 +4,13 @@ import React, { useState } from 'react';
 import Main1 from './pages/Main1';
 import Main2 from './pages/Main2';
 import Navbar from './components/Navbar';
-import Login from './login/Login';
-import SignUp from './login/SignUp';
-import FindAccount from './login/FindAccount';
+import Login from './components/login/Login';
+import SignUp from './components/login/SignUp';
+import FindAccount from './components/login/FindAccount';
 import Notice from './pages/Notice';
-import MemberManagement from './login/MemberManagement';
+import MemberManagement from './components/login/MemberManagement';
 import XRayUpload from './pages/XRayUpload';
-import Profile from './login/Profile';
+import Profile from './components/login/Profile';
 import DiagnosisList from './pages/DiagnosisList';
 import UploadHistory from './pages/UploadHistory';
 import Diagnosis from './components/diagnosis/Diagnosis';
@@ -72,7 +72,7 @@ function App() {
             case 'xray-upload':
                  return currentUser.role === 'XRAY_OPERATOR' ? <XRayUpload currentUser={currentUser} /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
             case 'upload-history':
-                 return currentUser.role === 'XRAY_OPERATOR' || currentUser.role === 'ADMIN' ? <UploadHistory /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
+                 return currentUser.role === 'XRAY_OPERATOR' || currentUser.role === 'ADMIN' ? <UploadHistory currentUser={currentUser} /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
             case 'main':
             default:
                 return <Main2 currentUser={currentUser} onNavigate={handleNavigate} />;
