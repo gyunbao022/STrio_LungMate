@@ -1,33 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
+
+const sampleNotices = [
+    {
+        noticeNo: 3,
+        noticeTitle: '개인정보처리방침 개정 안내',
+        noticeContent: `안녕하세요, STrio입니다. \n\nSTrio 서비스의 개인정보처리방침이 2025년 11월 1일자로 개정될 예정입니다. \n\n주요 개정 내용은 다음과 같습니다. \n- 개인정보 수집 항목 구체화 \n- 제3자 정보 제공 관련 내용 보강 \n\n자세한 내용은 공지사항의 첨부파일을 확인해주시기 바랍니다. \n\n감사합니다.`,
+        createDate: new Date('2025-10-18T09:00:00'),
+    },
+    {
+        noticeNo: 2,
+        noticeTitle: '서버 점검 안내 (10/20 02:00 ~ 04:00)',
+        noticeContent: `안녕하세요, STrio입니다. \n\n보다 안정적인 서비스 제공을 위해 아래와 같이 서버 점검을 실시할 예정입니다. \n\n- 점검 일시: 2025년 10월 20일(월) 02:00 ~ 04:00 (2시간) \n- 점검 내용: 서비스 안정화 및 성능 개선 작업 \n\n점검 시간 동안 서비스 이용이 일시적으로 중단될 수 있으니 양해 부탁드립니다. \n\n감사합니다.`,
+        createDate: new Date('2025-10-17T14:30:00'),
+    },
+    {
+        noticeNo: 1,
+        noticeTitle: 'STrio 서비스 정식 오픈 안내',
+        noticeContent: `안녕하세요, STrio입니다. \n\n오랜 기간의 준비 끝에 STrio가 정식으로 서비스를 오픈합니다. \n\nSTrio는 최신 AI 기술을 활용하여 의료 영상 분석을 돕는 서비스입니다. \n\n많은 관심과 이용 부탁드립니다. \n\n감사합니다.`,
+        createDate: new Date('2025-10-16T10:00:00'),
+    },
+];
 
 function Notice({ currentUser }) {
     const [selectedNotice, setSelectedNotice] = useState(null);
-    const [notices, setNotices] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [notices, setNotices] = useState(sampleNotices);
+    const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedNotice, setEditedNotice] = useState(null);
 
     const isAdmin = currentUser && currentUser.role === 'ADMIN';
-
-    const fetchNotices = async () => {
-        setLoading(true);
-        try {
-            // API 엔드포인트에서 데이터를 가져옵니다. (페이지 1로 고정)
-            const response = await axios.get('/board/list/1');
-            // pv 객체 안에 boardList가 포함되어 있으므로, 해당 리스트를 사용합니다.
-            setNotices(response.data.boardList || []);
-        } catch (error) {
-            console.error("공지사항 로딩 실패:", error);
-            setNotices([]); // 에러 발생 시 빈 배열로 초기화
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchNotices();
-    }, []);
 
     const handleCreate = () => {
         setEditedNotice({ noticeTitle: '', noticeContent: '' });
@@ -41,50 +42,38 @@ function Notice({ currentUser }) {
         setSelectedNotice(null);
     };
 
-    const handleDelete = async (noticeNo) => {
+    const handleDelete = (noticeNo) => {
         if (window.confirm("정말로 이 공지사항을 삭제하시겠습니까?")) {
-            try {
-                await axios.delete(`/board/delete/${noticeNo}`);
-                alert("공지사항이 삭제되었습니다.");
-                fetchNotices(); // 목록 새로고침
-                setSelectedNotice(null); // 상세 보기 닫기
-            } catch (error) {
-                console.error("삭제 실패:", error);
-                alert("삭제에 실패했습니다.");
-            }
+            const updatedNotices = notices.filter(n => n.noticeNo !== noticeNo);
+            setNotices(updatedNotices);
+            alert("공지사항이 삭제되었습니다.");
+            setSelectedNotice(null);
         }
     };
 
-    const handleSave = async (e) => {
+    const handleSave = (e) => {
         e.preventDefault();
-        const formData = new FormData();
-        formData.append('noticeTitle', editedNotice.noticeTitle);
-        formData.append('noticeContent', editedNotice.noticeContent);
-
-        // 새 글 작성과 수정 분기
         const isNew = !editedNotice.noticeNo;
-        const url = isNew ? '/board/write' : '/board/update';
-        const method = isNew ? 'post' : 'put';
 
-        if (!isNew) {
-            formData.append('noticeNo', editedNotice.noticeNo);
+        if (isNew) {
+            const newNotice = {
+                ...editedNotice,
+                noticeNo: notices.length > 0 ? Math.max(...notices.map(n => n.noticeNo)) + 1 : 1,
+                createDate: new Date(),
+            };
+            setNotices([newNotice, ...notices]);
+            alert('공지사항이 성공적으로 작성되었습니다.');
+        } else {
+            const updatedNotices = notices.map(n => 
+                n.noticeNo === editedNotice.noticeNo ? { ...editedNotice, createDate: n.createDate } : n
+            );
+            setNotices(updatedNotices);
+            alert('공지사항이 성공적으로 수정되었습니다.');
         }
 
-        try {
-            await axios({
-                method: method,
-                url: url,
-                data: formData,
-                headers: { 'Content-Type': 'multipart/form-data' },
-            });
-            alert(`공지사항이 성공적으로 ${isNew ? '작성' : '수정'}되었습니다.`);
-            setIsEditing(false);
-            setEditedNotice(null);
-            fetchNotices();
-        } catch (error) {
-            console.error("저장 실패:", error);
-            alert("저장에 실패했습니다.");
-        }
+        setIsEditing(false);
+        setEditedNotice(null);
+        setSelectedNotice(null);
     };
 
     if (loading) {
@@ -103,7 +92,6 @@ function Notice({ currentUser }) {
             </div>
 
             {isEditing ? (
-                // --- 글쓰기/수정 UI ---
                 <form onSubmit={handleSave} className="bg-gray-800/50 p-6 sm:p-8 rounded-lg">
                     <input 
                         type="text" 
@@ -130,7 +118,6 @@ function Notice({ currentUser }) {
                     </div>
                 </form>
             ) : selectedNotice ? (
-                // --- 상세 보기 UI ---
                 <div className="bg-gray-800/50 p-6 sm:p-8 rounded-lg">
                     <h2 className="text-2xl font-bold mb-2">{selectedNotice.noticeTitle}</h2>
                     <p className="text-gray-400 text-sm mb-6 border-b border-gray-700 pb-4">
@@ -156,7 +143,6 @@ function Notice({ currentUser }) {
                     </div>
                 </div>
             ) : (
-                // --- 목록 보기 UI ---
                 <div className="bg-gray-800/50 rounded-lg overflow-hidden">
                     <table className="w-full text-sm text-left text-gray-300">
                         <thead className="text-xs text-gray-400 uppercase bg-gray-700/50">

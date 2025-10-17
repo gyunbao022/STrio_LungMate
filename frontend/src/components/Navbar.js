@@ -17,7 +17,7 @@ function Navbar({ currentUser, onNavigate, onLogout }) {
 
             switch (role) {
                 case 'DOCTOR':
-                    return [ ...loggedInUserMenus, { name: '판독 대기 리스트', page: 'diagnosis-list' }];
+                    return [ ...loggedInUserMenus, { name: '판독 리스트', page: 'diagnosis-list' }];
                 case 'XRAY_OPERATOR':
                     return [ ...loggedInUserMenus, { name: 'X-Ray 업로드', page: 'diagnosis' },
                                                    { name: '업로드 내역', page: 'upload-history' }];
@@ -27,7 +27,7 @@ function Navbar({ currentUser, onNavigate, onLogout }) {
                         { name: '공지사항', page: 'notice' },
                         { name: 'X-Ray 업로드', page: 'diagnosis' },
                         { name: '업로드 내역', page: 'upload-history' },
-                        { name: '판독 대기 리스트', page: 'diagnosis-list' },
+                        { name: '판독 리스트', page: 'diagnosis-list' },
                         { name: '회원 관리', page: 'members' }
                     ];
                 default: // 일반 사용자
