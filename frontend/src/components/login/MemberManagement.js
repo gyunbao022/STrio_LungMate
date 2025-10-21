@@ -9,7 +9,7 @@ function MemberManagement() {
     const [editingMemberId, setEditingMemberId] = useState(null); // 수정 모드인 회원의 ID
     const [editedRole, setEditedRole] = useState(''); // 수정 시 선택된 역할
 
-    // ✅ 날짜 포맷 함수
+    // 날짜 포맷 함수
     const formatDate = (dateString) => {
         if (!dateString) return '-';
         const date = new Date(dateString);
@@ -19,7 +19,7 @@ function MemberManagement() {
         return `${year}-${month}-${day}`;
     };
 
-    // ✅ 역할 매핑 (코드 ↔ 라벨)
+    // 역할 매핑 (코드 ↔ 라벨)
     const ROLE_MAP = {
         D: 'DOCTOR',
         X: 'XRAY_OPERATOR',
