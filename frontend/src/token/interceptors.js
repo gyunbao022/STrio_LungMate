@@ -1,4 +1,3 @@
-//interceptors.js
 import axios from "axios";
 
 // ✅ 토큰 갱신 요청 함수
