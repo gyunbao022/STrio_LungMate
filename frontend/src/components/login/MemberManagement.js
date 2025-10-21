@@ -23,7 +23,7 @@ function MemberManagement() {
     };
     
     useEffect(() => {
-        // DB MEMBER 테이블 스키마에 맞춘 더미 데이터
+        // DB MEMBER 테이블 스키마에 맞춘 더미 데이터   
         const dummyMembers = [
             { memberId: 'doctor_kim', memberName: '김의사3', email: 'dr.kim@hospital.com', role: 'DOCTOR', joinDate: '2025-09-15', status: 'ACTIVE' },
             { memberId: 'xray_lee', memberName: '이방사선', email: 'xray.lee@hospital.com', role: 'XRAY_OPERATOR', joinDate: '2025-09-18', status: 'ACTIVE' },
