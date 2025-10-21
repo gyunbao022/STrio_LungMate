@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import instance from "../../token/interceptors";
 
 function MemberManagement() {
-    // 1. 상태 관리 확장: 검색어, 수정 중인 회원 ID 등을 추가합니다.
+    // 1. 상태 관리 확장: 검색어, 수정 중인 회원 ID 등을 추가합니다
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
