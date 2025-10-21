@@ -65,13 +65,6 @@ function MemberManagement() {
     };
 
     // 4. 수정 내용 저장 핸들러 (API 호출 지점)
-    // const handleSaveClick = (memberId) => {
-    //     // TODO: 여기에 memberId와 editedRole을 백엔드로 보내는 API 호출 로직 추가
-    //     alert(`${memberId}의 권한을 ${editedRole}(으)로 변경 요청했습니다.`);
-    //     // 프론트엔드 상태를 즉시 업데이트
-    //     setMembers(members.map(m => m.userId === memberId ? { ...m, role: editedRole } : m));
-    //     setEditingMemberId(null); // 수정 모드 종료
-    // };
     const handleSaveClick = async (memberId) => {
         if (!editedRole) {
             alert("수정할 역할을 선택해주세요.");
