@@ -1,7 +1,9 @@
-import React, { useEffect } from "react";
-// import instance from "../../token/interceptors"; // 백엔드 연결 후 사용
+import React, { useEffect, useRef } from "react";
+import instance from "../../token/interceptors";
 
-const Logout = () => {
+const Logout = ({ onNavigate, onLogout }) => {
+  const hasRun = useRef(false);
+
   const config = {
     headers: {
       "Content-Type": "application/json",
@@ -11,37 +13,34 @@ const Logout = () => {
   };
 
   const handleCommit = async () => {
-    console.log("logout");
-    const email = localStorage.getItem("adminId");
-    console.log("logout=============> / :", email);
-
-    // 백엔드와 연결되기 전까지는 아래 API 요청 주석 처리!
+    console.log("logout start");
+    const userId = localStorage.getItem("userId");
+    console.log("logout userId =>", userId);
 
     try {
-      await instance.delete(`/admin/logout`, config);
+      await instance.delete(`/member/logout`, config);
     } catch (error) {
-      console.log("logout 실패 =>", error.message);
+      console.warn("logout 실패 =>", error.message);
     }
 
-    // 로컬스토리지 데이터 제거
-    localStorage.removeItem("Authorization");
-    localStorage.removeItem("Authorization-refresh");
-    localStorage.removeItem("adminId");
-    localStorage.removeItem("name");
-    localStorage.removeItem("isLogin");
-
-    // 전체 비우는 경우 (위 코드들과 중복되므로 선택적으로 사용)
+    // 로컬스토리지 완전 정리
     localStorage.clear();
 
-    // 홈으로 리다이렉트
-    window.location.replace("/");
+    // App 상태 초기화
+    onLogout(); // currentUser = null, currentPage = main
+    onNavigate("main"); // 메인화면으로 이동
+
+    console.log("logout 완료, 메인 페이지 이동");
   };
 
   useEffect(() => {
-    handleCommit();
+    if (!hasRun.current) {
+      hasRun.current = true;
+      handleCommit();
+    }
   }, []);
 
-  return null; // 로그아웃 페이지는 실제 렌더링 필요 없음
+  return null; // 별도 렌더링 필요 없음
 };
 
 export default Logout;

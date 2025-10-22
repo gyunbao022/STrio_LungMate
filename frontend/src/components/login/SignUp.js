@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import AuthLayout from '../AuthLayout';
+import instance from "../../token/interceptors";
+//import { useNavigate } from "react-router-dom";
 
 function SignUp({ onNavigate }) {
     // 1. 각 입력 필드에 대한 상태(state)를 만듭니다.
@@ -8,7 +10,45 @@ function SignUp({ onNavigate }) {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [memberName, setMemberName] = useState('');
     const [email, setEmail] = useState('');
-    
+    //const navigate = useNavigate();
+    const [members, setMembers] = useState({
+        userId: "",
+        passwd: "",
+        userName: "",
+        roleCd: "",
+    });    
+
+    const handleValueChange = (e) => {
+        setMembers((prev) => {
+        return { ...prev, [e.target.name]: e.target.value };
+        });
+    };    
+
+    const onSubmit = async (e) => {
+        e.preventDefault();
+        setError(''); // 이전 에러 메시지 초기화
+
+        // 3. 클라이언트 측 유효성 검사
+        if (!members.userId || !members.passwd || !members.userName || !members.email) {
+            setError("모든 항목을 입력해주세요.");
+            return;
+        }
+        if (members.passwd !== confirmPassword) {
+            setError("비밀번호가 일치하지 않습니다.");
+            return;
+        }
+        
+        await instance
+        .post(`/member/signup`, members)
+        .then((response) => {
+            console.log(response.data);
+            onNavigate('login'); // 로그인 페이지로 이동
+        })
+        .catch((error) => {
+            console.log("signup 오류:", error.message);
+        });
+    };
+
     // 2. 에러 메시지를 위한 상태를 만듭니다.
     const [error, setError] = useState('');
 
@@ -46,19 +86,20 @@ function SignUp({ onNavigate }) {
             setError(err.message);
         }
     };
+
     
     const inputStyles = "w-full p-2 bg-gray-700 rounded mt-1 border border-gray-600 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50";
 
     return (
         <AuthLayout title="회원가입">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={onSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-300">아이디</label>
-                    <input type="text" value={memberId} onChange={(e) => setMemberId(e.target.value)} className={inputStyles} />
+                    <input type="text" name="userId" value={members.userId} onChange={handleValueChange} className={inputStyles} />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-300">비밀번호</label>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputStyles} />
+                    <input type="password" name="passwd" value={members.passwd} onChange={handleValueChange} className={inputStyles} />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-300">비밀번호 확인</label>
@@ -66,11 +107,11 @@ function SignUp({ onNavigate }) {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-300">이름</label>
-                    <input type="text" value={memberName} onChange={(e) => setMemberName(e.target.value)} className={inputStyles} />
+                    <input type="text" name="userName" value={members.userName} onChange={handleValueChange} className={inputStyles} />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-300">이메일</label>
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputStyles} />
+                    <input type="email" name="email" value={members.email} onChange={handleValueChange} className={inputStyles} />
                 </div>
 
                 {error && <p className="text-red-400 text-center text-sm pt-2">{error}</p>}
