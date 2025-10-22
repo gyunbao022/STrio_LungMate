@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
+import instance from "../token/interceptors";
 
 const sampleNotices = [
     {
@@ -29,6 +30,26 @@ function Notice({ currentUser }) {
     const [editedNotice, setEditedNotice] = useState(null);
 
     const isAdmin = currentUser && currentUser.role === 'ADMIN';
+
+    const getMemberList = async () => {
+        console.log("meber list =>");
+        await instance
+        .get(`/notice/list/1`)
+        .then((response) => {
+            //console.log(response.data);
+            setNotices(response.data.noticeList);
+        })
+        .catch((error) => {
+            console.log("notice list:", error.message);
+        });
+    };
+
+    useEffect(() => {
+
+        //setMembers(dummyMembers);
+        getMemberList();
+        setLoading(false);
+    }, []);    
 
     const handleCreate = () => {
         setEditedNotice({ noticeTitle: '', noticeContent: '' });
@@ -155,13 +176,13 @@ function Notice({ currentUser }) {
                         <tbody>
                             {notices.map(notice => (
                                 <tr key={notice.noticeNo} className="border-b border-gray-700 hover:bg-gray-700/50">
-                                    <td className="px-6 py-4">{notice.noticeNo}</td>
+                                    <td className="px-6 py-4">{notice.noticeId}</td>
                                     <td className="px-6 py-4">
                                         <button onClick={() => setSelectedNotice(notice)} className="font-medium hover:underline text-left">
-                                            {notice.noticeTitle}
+                                            {notice.title}
                                         </button>
                                     </td>
-                                    <td className="px-6 py-4">{new Date(notice.createDate).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4">{new Date(notice.createdAt).toLocaleDateString()}</td>
                                 </tr>
                             ))}
                         </tbody>

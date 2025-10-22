@@ -5,6 +5,7 @@ import Main1 from './pages/Main1';
 import Main2 from './pages/Main2';
 import Navbar from './components/Navbar';
 import Login from './components/login/Login';
+import Logout from './components/login/Logout';
 import SignUp from './components/login/SignUp';
 import FindAccount from './components/login/FindAccount';
 import Notice from './pages/Notice';
@@ -14,6 +15,9 @@ import Profile from './components/login/Profile';
 import DiagnosisList from './pages/DiagnosisList';
 import UploadHistory from './pages/UploadHistory';
 import Diagnosis from './components/diagnosis/Diagnosis';
+import { AuthProvider } from "./components/layout/AuthProvider";
+//import BaseLayout from "./components/layout/BaseLayout";
+//import ProtectedRoute from "./components/layout/ProtectedRoute"; // 로그인 보호된 라우트
 
 // --- 최상위 App 컴포넌트 ---
 function App() {
@@ -55,24 +59,26 @@ function App() {
             }
         }
 
-        // --- 2. 로그인 상태에서 보여줄 페이지 ---
+        // --- 2. 로그인 상태에서 보여줄 페이지 ---  2025.10.22 jaemin role code 변경
         switch (currentPage) {
+            case 'logout':
+                return <Logout onNavigate={handleNavigate} onLogout={handleLogout} />;
             case 'notice':
                 return <Notice currentUser={currentUser} />;
             case 'profile':
                 return <Profile currentUser={currentUser} setCurrentUser={setCurrentUser} />;
             case 'members':
-                return currentUser.role === 'ADMIN' ? <MemberManagement /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
+                return currentUser.role === 'A' ? <MemberManagement /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
             case 'diagnosis':
                 return <XRayUpload currentUser={currentUser} />;
             case 'view-diagnosis':
                 return <Diagnosis xrayId={selectedXrayId} currentUser={currentUser} onNavigate={handleNavigate} />;
             case 'diagnosis-list':
-                return currentUser.role === 'DOCTOR' || currentUser.role === 'ADMIN' ? <DiagnosisList onNavigate={handleNavigate} /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
+                return currentUser.role === 'D' || currentUser.role === 'A' ? <DiagnosisList onNavigate={handleNavigate} /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
             case 'xray-upload':
-                 return currentUser.role === 'XRAY_OPERATOR' ? <XRayUpload currentUser={currentUser} /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
+                 return currentUser.role === 'X' ? <XRayUpload currentUser={currentUser} /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
             case 'upload-history':
-                 return currentUser.role === 'XRAY_OPERATOR' || currentUser.role === 'ADMIN' ? <UploadHistory currentUser={currentUser} /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
+                 return currentUser.role === 'X' || currentUser.role === 'A' ? <UploadHistory currentUser={currentUser} /> : <h2 className="text-center">접근 권한이 없습니다.</h2>;
             case 'main':
             default:
                 return <Main2 currentUser={currentUser} onNavigate={handleNavigate} />;
@@ -80,16 +86,18 @@ function App() {
     };
 
     return (
-        <div className="bg-gray-900 text-white min-h-screen font-sans">
-            <Navbar 
-                currentUser={currentUser} 
-                onLogout={handleLogout}
-                onNavigate={handleNavigate} 
-            />
-            <main className="container mx-auto p-4 sm:p-6 md:p-8 pt-24">
-                {renderPage()}
-            </main>
-        </div>
+        <AuthProvider>
+            <div className="bg-gray-900 text-white min-h-screen font-sans">
+                <Navbar 
+                    currentUser={currentUser} 
+                    onLogout={handleLogout}
+                    onNavigate={handleNavigate} 
+                />
+                <main className="container mx-auto p-4 sm:p-6 md:p-8 pt-24">
+                    {renderPage()}
+                </main>
+            </div>
+        </AuthProvider>
     );
 }
 
