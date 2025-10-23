@@ -43,14 +43,6 @@ function Profile({ currentUser, setCurrentUser }) {
 
         // TODO: 백엔드 API 호출로 사용자 정보 업데이트
         try {
-            // 예시: API 호출 시뮬레이션
-            // const response = await fetch('/api/user/profile', {
-            //     method: 'PUT',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ memberId: currentUser.memberId, memberName, email }),
-            // });
-            // const data = await response.json();
-            // if (!response.ok) throw new Error(data.message || '정보 업데이트 실패');
 
             // 성공 시 currentUser 업데이트 및 성공 메시지 표시
             setCurrentUser({ ...currentUser, memberName, email });
@@ -60,6 +52,8 @@ function Profile({ currentUser, setCurrentUser }) {
             setError(err.message);
         }
     };
+
+
 
     // 비밀번호 변경 핸들러
     const handlePasswordUpdate = async (e) => {

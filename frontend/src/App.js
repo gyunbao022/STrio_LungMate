@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // --- 각 페이지 컴포넌트들을 import 합니다. ---
 import Main1 from './pages/Main1';
@@ -25,6 +25,23 @@ function App() {
     const [currentUser, setCurrentUser] = useState(null);
     const [selectedXrayId, setSelectedXrayId] = useState(null);
 
+    // 새로고침 시 localStorage에서 사용자 정보 복원
+    useEffect(() => {
+        const storedUserId = localStorage.getItem("userId");
+        const storedUserName = localStorage.getItem("userName");
+        const storedRoleCd = localStorage.getItem("roleCd");
+        const storedEmail = localStorage.getItem("email");
+        const isLogin = localStorage.getItem("isLogin");
+
+        if (isLogin && storedUserId && storedUserName && storedRoleCd) {
+            setCurrentUser({
+                memberId: storedUserId,
+                memberName: storedUserName,
+                role: storedRoleCd,
+                email: storedEmail,
+            });
+        }
+    }, []); // 첫 렌더링 시 한 번만 실행
 
     const handleLogin = (userData) => {
         setCurrentUser(userData);
@@ -46,6 +63,7 @@ function App() {
     const renderPage = () => {
         // --- 1. 비로그인 상태에서 보여줄 페이지 ---
         if (!currentUser) {
+
             switch (currentPage) {
                 case 'login':
                     return <Login onLogin={handleLogin} onNavigate={handleNavigate} />;
