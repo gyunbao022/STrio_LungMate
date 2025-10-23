@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AuthLayout from '../AuthLayout'; // 공통 레이아웃 사용
+import instance from "../../token/interceptors";
 
 // App.js로부터 currentUser (로그인 정보)와 setCurrentUser (정보 업데이트 함수)를 받습니다.
 function Profile({ currentUser, setCurrentUser }) {
@@ -26,9 +27,10 @@ function Profile({ currentUser, setCurrentUser }) {
             setNewPassword('');
             setConfirmNewPassword('');
             setError('');
-            setSuccessMessage('');
+            //setSuccessMessage('');
         }
     }, [currentUser]);
+   
 
     // 일반 정보(이름, 이메일) 수정 핸들러
     const handleProfileUpdate = async (e) => {
@@ -40,26 +42,36 @@ function Profile({ currentUser, setCurrentUser }) {
             setError("이름과 이메일을 모두 입력해주세요.");
             return;
         }
-
         // TODO: 백엔드 API 호출로 사용자 정보 업데이트
-        try {
-            // 예시: API 호출 시뮬레이션
-            // const response = await fetch('/api/user/profile', {
-            //     method: 'PUT',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ memberId: currentUser.memberId, memberName, email }),
-            // });
-            // const data = await response.json();
-            // if (!response.ok) throw new Error(data.message || '정보 업데이트 실패');
-
+        /*try {
             // 성공 시 currentUser 업데이트 및 성공 메시지 표시
             setCurrentUser({ ...currentUser, memberName, email });
             setSuccessMessage("회원 정보가 성공적으로 업데이트되었습니다.");
-
         } catch (err) {
             setError(err.message);
-        }
+        }*/
+        const userData = {
+            userId: currentUser.memberId,
+            userName: memberName,
+            email: email,
+        };  
+        
+        await instance
+        .put(`/member/update`, userData)
+        .then((response) => {
+            console.log(response.data);
+            //onNavigate('login'); // 로그인 페이지로 이동
+            localStorage.setItem("userName", memberName);
+            localStorage.setItem("email", email);            
+            setCurrentUser({ ...currentUser, memberName, email });
+            setSuccessMessage("회원 정보가 성공적으로 업데이트되었습니다.");            
+        })
+        .catch((error) => {
+            console.log(" member update 오류:", error.message);
+            setError("정보 수정시 에러가 발생하였습니다.");
+        });        
     };
+
 
     // 비밀번호 변경 핸들러
     const handlePasswordUpdate = async (e) => {
@@ -75,8 +87,8 @@ function Profile({ currentUser, setCurrentUser }) {
             setError("새 비밀번호가 일치하지 않습니다.");
             return;
         }
-        if (newPassword.length < 6) { // 최소 길이 설정
-            setError("새 비밀번호는 6자 이상이어야 합니다.");
+        if (newPassword.length < 4) { // 최소 길이 설정
+            setError("새 비밀번호는 4자 이상이어야 합니다.");
             return;
         }
         if (currentPassword === newPassword) {
@@ -86,20 +98,28 @@ function Profile({ currentUser, setCurrentUser }) {
 
         // TODO: 백엔드 API 호출로 비밀번호 변경
         try {
-            // 예시: API 호출 시뮬레이션
-            // const response = await fetch('/api/user/password', {
-            //     method: 'PUT',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ memberId: currentUser.memberId, currentPassword, newPassword }),
-            // });
-            // const data = await response.json();
-            // if (!response.ok) throw new Error(data.message || '비밀번호 변경 실패');
 
-            // 성공 시 비밀번호 필드 초기화 및 성공 메시지 표시
-            setCurrentPassword('');
-            setNewPassword('');
-            setConfirmNewPassword('');
-            setSuccessMessage("비밀번호가 성공적으로 변경되었습니다.");
+            const userData = {
+                userId: currentUser.memberId,
+                passwd: currentPassword,
+                newPasswd: newPassword,
+            };              
+            await instance
+            .put(`/member/updatePasswd`, userData)
+            .then((response) => {
+                console.log(response.data);
+                // 성공 시 비밀번호 필드 초기화 및 성공 메시지 표시
+                setCurrentPassword('');
+                setNewPassword('');
+                setConfirmNewPassword('');
+                setSuccessMessage("비밀번호가 성공적으로 변경되었습니다.");         
+            })
+            .catch((error) => {
+                console.log(" member update 오류:", error.message);
+                setError("비밀번호 변경시 에러가 발생하였습니다.");
+            });              
+
+
 
         } catch (err) {
             setError(err.message);
@@ -119,8 +139,6 @@ function Profile({ currentUser, setCurrentUser }) {
     return (
         <AuthLayout title="회원 정보">
             <div className="space-y-8">
-                {error && <p className="text-red-400 text-center text-sm mb-4">{error}</p>}
-                {successMessage && <p className="text-green-400 text-center text-sm mb-4">{successMessage}</p>}
 
                 {/* --- 1. 기본 정보 --- */}
                 <div className="bg-gray-700/50 p-6 rounded-lg">
@@ -148,6 +166,9 @@ function Profile({ currentUser, setCurrentUser }) {
                     </form>
                 </div>
 
+                {error && <p className="text-red-400 text-center text-sm mb-4">{error}</p>}
+                {successMessage && <p className="text-green-400 text-center text-sm mb-4">{successMessage}</p>}
+                
                 {/* --- 2. 비밀번호 변경 --- */}
                 <div className="bg-gray-700/50 p-6 rounded-lg">
                     <h3 className="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">비밀번호 변경</h3>

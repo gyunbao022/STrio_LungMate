@@ -14,14 +14,14 @@ function Navbar({ currentUser, onNavigate, onLogout }) {
             const loggedInUserMenus = [
                 { name: '공지사항', page: 'notice' }
             ];
-
+            // D:DOCTOR, X:XRAY_OPERATOR, A:ADMIN  2025.10.22 jaemin role code 변경
             switch (role) {
-                case 'DOCTOR':
+                case 'D':
                     return [ ...loggedInUserMenus, { name: '판독 리스트', page: 'diagnosis-list' }];
-                case 'XRAY_OPERATOR':
+                case 'X':
                     return [ ...loggedInUserMenus, { name: 'X-Ray 업로드', page: 'diagnosis' },
                                                    { name: '업로드 내역', page: 'upload-history' }];
-                case 'ADMIN':
+                case 'A':
                     return [
                         { name: '메인', page: 'main' },
                         { name: '공지사항', page: 'notice' },
@@ -72,7 +72,10 @@ function Navbar({ currentUser, onNavigate, onLogout }) {
                                 >
                                     회원정보
                                 </button>
-                                <button onClick={onLogout} className="bg-red-600/80 hover:bg-red-700/80 text-white px-3 py-2 rounded-md text-sm font-medium">
+                                <button
+                                    onClick={() => onNavigate('logout')}
+                                    className="bg-red-600/80 hover:bg-red-700/80 text-white px-3 py-2 rounded-md text-sm font-medium"
+                                >
                                     로그아웃
                                 </button>
                             </>

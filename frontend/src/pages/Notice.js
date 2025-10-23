@@ -1,37 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 
-const sampleNotices = [
-    {
-        noticeNo: 3,
-        noticeTitle: '개인정보처리방침 개정 안내',
-        noticeContent: `안녕하세요, STrio입니다. \n\nSTrio 서비스의 개인정보처리방침이 2025년 11월 1일자로 개정될 예정입니다. \n\n주요 개정 내용은 다음과 같습니다. \n- 개인정보 수집 항목 구체화 \n- 제3자 정보 제공 관련 내용 보강 \n\n자세한 내용은 공지사항의 첨부파일을 확인해주시기 바랍니다. \n\n감사합니다.`,
-        createDate: new Date('2025-10-18T09:00:00'),
-    },
-    {
-        noticeNo: 2,
-        noticeTitle: '서버 점검 안내 (10/20 02:00 ~ 04:00)',
-        noticeContent: `안녕하세요, STrio입니다. \n\n보다 안정적인 서비스 제공을 위해 아래와 같이 서버 점검을 실시할 예정입니다. \n\n- 점검 일시: 2025년 10월 20일(월) 02:00 ~ 04:00 (2시간) \n- 점검 내용: 서비스 안정화 및 성능 개선 작업 \n\n점검 시간 동안 서비스 이용이 일시적으로 중단될 수 있으니 양해 부탁드립니다. \n\n감사합니다.`,
-        createDate: new Date('2025-10-17T14:30:00'),
-    },
-    {
-        noticeNo: 1,
-        noticeTitle: 'STrio 서비스 정식 오픈 안내',
-        noticeContent: `안녕하세요, STrio입니다. \n\n오랜 기간의 준비 끝에 STrio가 정식으로 서비스를 오픈합니다. \n\nSTrio는 최신 AI 기술을 활용하여 의료 영상 분석을 돕는 서비스입니다. \n\n많은 관심과 이용 부탁드립니다. \n\n감사합니다.`,
-        createDate: new Date('2025-10-16T10:00:00'),
-    },
-];
+const API_BASE_URL = "http://localhost:8090";
 
 function Notice({ currentUser }) {
     const [selectedNotice, setSelectedNotice] = useState(null);
-    const [notices, setNotices] = useState(sampleNotices);
+    const [notices, setNotices] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedNotice, setEditedNotice] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const isAdmin = currentUser && currentUser.role === 'ADMIN';
+    // 1. fetchNotices (useCallback 유지 - 올바른 코드)
+    const fetchNotices = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/notice/list/1`);
+            const sortedNotices = response.data.noticeList.sort((a, b) => b.noticeId - a.noticeId);
+            setNotices(sortedNotices);
+        } catch (error) {
+            console.error("공지사항을 불러오는 중 오류가 발생했습니다:", error);
+            alert("공지사항을 불러오는 데 실패했습니다.");
+        } finally {
+            setLoading(false);
+        }
+    }, []); 
 
+    // 2. useEffect (useCallback 의존성 유지)
+    useEffect(() => {
+        fetchNotices();
+    }, [fetchNotices]); 
+
+    const isAdmin = currentUser && currentUser.role === 'A'; 
+
+    // 4. handleCreate, handleEdit (유지)
     const handleCreate = () => {
-        setEditedNotice({ noticeTitle: '', noticeContent: '' });
+        setEditedNotice({ title: '', cont: '' });
         setIsEditing(true);
         setSelectedNotice(null);
     };
@@ -42,38 +46,76 @@ function Notice({ currentUser }) {
         setSelectedNotice(null);
     };
 
-    const handleDelete = (noticeNo) => {
+    // 5. handleDelete (유지 - 올바른 코드)
+    const handleDelete = async (noticeId) => {
         if (window.confirm("정말로 이 공지사항을 삭제하시겠습니까?")) {
-            const updatedNotices = notices.filter(n => n.noticeNo !== noticeNo);
-            setNotices(updatedNotices);
-            alert("공지사항이 삭제되었습니다.");
-            setSelectedNotice(null);
+            setIsSaving(true); 
+            try {
+                await axios.delete(`${API_BASE_URL}/notice/delete/${noticeId}`);
+                alert("공지사항이 삭제되었습니다.");
+                setSelectedNotice(null);
+                await fetchNotices(); // 목록 새로고침
+            } catch (error) {
+                console.error("공지사항 삭제 중 오류:", error);
+                alert("삭제 중 오류가 발생했습니다.");
+            } finally {
+                setIsSaving(false); 
+            }
         }
     };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        const isNew = !editedNotice.noticeNo;
+        setIsSaving(true); 
 
-        if (isNew) {
-            const newNotice = {
-                ...editedNotice,
-                noticeNo: notices.length > 0 ? Math.max(...notices.map(n => n.noticeNo)) + 1 : 1,
-                createDate: new Date(),
-            };
-            setNotices([newNotice, ...notices]);
-            alert('공지사항이 성공적으로 작성되었습니다.');
-        } else {
-            const updatedNotices = notices.map(n => 
-                n.noticeNo === editedNotice.noticeNo ? { ...editedNotice, createDate: n.createDate } : n
-            );
-            setNotices(updatedNotices);
-            alert('공지사항이 성공적으로 수정되었습니다.');
+        const isNew = !editedNotice.noticeId;
+        const formData = new FormData();
+        formData.append('title', editedNotice.title);
+        formData.append('cont', editedNotice.cont);
+
+        // [수정 2] DB의 USER_ID (NOT NULL) 컬럼을 채우기 위해 userId 전송
+        const userId = currentUser ? currentUser.memberName : null;
+
+        if (!userId) {
+            console.error("userId(memberName)를 찾을 수 없습니다! currentUser 객체:", currentUser);
+            alert("로그인 정보(ID)가 없어 저장할 수 없습니다.");
+            setIsSaving(false);
+            return;
         }
+        
+        formData.append('userId', userId);
 
-        setIsEditing(false);
-        setEditedNotice(null);
-        setSelectedNotice(null);
+        try {
+            if (isNew) {
+                await axios.post(`${API_BASE_URL}/notice/write`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                alert('공지사항이 성공적으로 작성되었습니다.');
+            } else {
+                formData.append('noticeId', editedNotice.noticeId);
+                await axios.put(`${API_BASE_URL}/notice/update`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                alert('공지사항이 성공적으로 수정되었습니다.');
+            }
+
+            setIsEditing(false);
+            setEditedNotice(null);
+            setSelectedNotice(null);
+            await fetchNotices(); // 목록 새로고침
+
+        } catch (error) {
+            console.error("공지사항 저장 중 오류:", error);
+            if (error.response && error.response.status === 403) {
+                alert("저장 권한이 없습니다. (403 Forbidden)");
+            } else if (error.response && error.response.status === 500) {
+                 alert("서버 내부 오류 (500).\n백엔드 콘솔 로그를 확인하세요.");
+            } else {
+                alert("저장 중 오류가 발생했습니다.");
+            }
+        } finally {
+            setIsSaving(false); 
+        }
     };
 
     if (loading) {
@@ -95,48 +137,58 @@ function Notice({ currentUser }) {
                 <form onSubmit={handleSave} className="bg-gray-800/50 p-6 sm:p-8 rounded-lg">
                     <input 
                         type="text" 
-                        value={editedNotice.noticeTitle}
-                        onChange={(e) => setEditedNotice({ ...editedNotice, noticeTitle: e.target.value })}
+                        value={editedNotice.title}
+                        onChange={(e) => setEditedNotice({ ...editedNotice, title: e.target.value })}
                         placeholder="제목" 
                         className="w-full bg-gray-700 text-white p-2 rounded mb-4" 
                         required 
+                        disabled={isSaving} 
                     />
                     <textarea 
-                        value={editedNotice.noticeContent}
-                        onChange={(e) => setEditedNotice({ ...editedNotice, noticeContent: e.target.value })}
+                        value={editedNotice.cont}
+                        onChange={(e) => setEditedNotice({ ...editedNotice, cont: e.target.value })}
                         placeholder="내용" 
                         className="w-full bg-gray-700 text-white p-2 rounded mb-4 h-48" 
                         required 
+                        disabled={isSaving} 
                     />
                     <div className="flex justify-end gap-4">
-                        <button type="button" onClick={() => setIsEditing(false)} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                        <button type="button" onClick={() => setIsEditing(false)}
+                            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50" 
+                            disabled={isSaving}> 
                             취소
                         </button>
-                        <button type="submit" className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                            저장
+                        <button type="submit"
+                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50" 
+                            disabled={isSaving}>
+                            {isSaving ? '저장 중...' : '저장'} 
                         </button>
                     </div>
                 </form>
             ) : selectedNotice ? (
                 <div className="bg-gray-800/50 p-6 sm:p-8 rounded-lg">
-                    <h2 className="text-2xl font-bold mb-2">{selectedNotice.noticeTitle}</h2>
+                    <h2 className="text-2xl font-bold mb-2">{selectedNotice.title}</h2>
                     <p className="text-gray-400 text-sm mb-6 border-b border-gray-700 pb-4">
-                        작성일: {new Date(selectedNotice.createDate).toLocaleDateString()}
+                        작성일: {new Date(selectedNotice.createdAt).toLocaleDateString()}
                     </p>
                     <div className="text-gray-300 whitespace-pre-wrap">
-                        {selectedNotice.noticeContent}
+                        {selectedNotice.cont}
                     </div>
                     <div className="flex justify-between items-center mt-8">
-                        <button onClick={() => setSelectedNotice(null)} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                        <button onClick={() => setSelectedNotice(null)}
+                            className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                             목록으로
                         </button>
                         {isAdmin && (
                             <div className="flex gap-4">
-                                <button onClick={() => handleEdit(selectedNotice)} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+                                <button onClick={() => handleEdit(selectedNotice)}
+                                    className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
                                     수정
                                 </button>
-                                <button onClick={() => handleDelete(selectedNotice.noticeNo)} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                                    삭제
+                                <button onClick={() => handleDelete(selectedNotice.noticeId)}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                                    disabled={isSaving}> 
+                                    {isSaving ? '삭제 중...' : '삭제'}
                                 </button>
                             </div>
                         )}
@@ -154,14 +206,14 @@ function Notice({ currentUser }) {
                         </thead>
                         <tbody>
                             {notices.map(notice => (
-                                <tr key={notice.noticeNo} className="border-b border-gray-700 hover:bg-gray-700/50">
-                                    <td className="px-6 py-4">{notice.noticeNo}</td>
+                                <tr key={notice.noticeId} className="border-b border-gray-700 hover:bg-gray-700/50">
+                                    <td className="px-6 py-4">{notice.noticeId}</td>
                                     <td className="px-6 py-4">
                                         <button onClick={() => setSelectedNotice(notice)} className="font-medium hover:underline text-left">
-                                            {notice.noticeTitle}
+                                            {notice.title}
                                         </button>
                                     </td>
-                                    <td className="px-6 py-4">{new Date(notice.createDate).toLocaleDateString()}</td>
+                                    <td className="px-6 py-4">{new Date(notice.createdAt).toLocaleDateString()}</td>
                                 </tr>
                             ))}
                         </tbody>
