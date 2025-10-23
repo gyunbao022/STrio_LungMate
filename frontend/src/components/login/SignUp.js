@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AuthLayout from '../AuthLayout';
 import instance from "../../token/interceptors";
+import './Login.css';   // 메시지 스타일 추가
 //import { useNavigate } from "react-router-dom";
 
 function SignUp({ onNavigate }) {
@@ -10,6 +11,8 @@ function SignUp({ onNavigate }) {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [memberName, setMemberName] = useState('');
     const [email, setEmail] = useState('');
+    const [successMessage, setSuccessMessage] = useState(''); // ✅ 성공 메시지 상태 추가
+
     //const navigate = useNavigate();
     const [members, setMembers] = useState({
         userId: "",
@@ -27,12 +30,21 @@ function SignUp({ onNavigate }) {
     const onSubmit = async (e) => {
         e.preventDefault();
         setError(''); // 이전 에러 메시지 초기화
+        setSuccessMessage('');
 
         // 3. 클라이언트 측 유효성 검사
         if (!members.userId || !members.passwd || !members.userName || !members.email) {
             setError("모든 항목을 입력해주세요.");
             return;
         }
+        if (members.userId.length < 4) { // 최소 길이 설정
+            setError("아이디는 4자 이상이어야 합니다.");
+            return;
+        }           
+        if (members.passwd.length < 4) { // 최소 길이 설정
+            setError("비밀번호는 4자 이상이어야 합니다.");
+            return;
+        }        
         if (members.passwd !== confirmPassword) {
             setError("비밀번호가 일치하지 않습니다.");
             return;
@@ -42,10 +54,16 @@ function SignUp({ onNavigate }) {
         .post(`/member/signup`, members)
         .then((response) => {
             console.log(response.data);
-            onNavigate('login'); // 로그인 페이지로 이동
+            // alert 대신 커스텀 메시지 표시
+            setSuccessMessage("회원가입이 성공적으로 완료되었습니다!");
+            setTimeout(() => {
+                setSuccessMessage('');
+                onNavigate('login');
+            }, 2000); // 2초 후 로그인 화면 이동
         })
         .catch((error) => {
             console.log("signup 오류:", error.message);
+            setError("회원가입이 실패하였습니다. 관리자에게 문의하십시요.",error.message);
         });
     };
 
@@ -92,6 +110,14 @@ function SignUp({ onNavigate }) {
 
     return (
         <AuthLayout title="회원가입">
+
+            {/* ✅ 성공 메시지 */}
+            {successMessage && (
+                <div className="success-toast">
+                    {successMessage}
+                </div>
+            )}
+            
             <form onSubmit={onSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-300">아이디</label>
