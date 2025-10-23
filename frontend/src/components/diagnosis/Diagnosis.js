@@ -1,112 +1,278 @@
-import React, { useState, useEffect } from 'react';
-import ImageUploader from './ImageUploader';
-import ResultCard from './ResultCard';
-import placeholderImage from '../../images/image1.jpg';
+// frontend/src/components/diagnosis/Diagnosis.js
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import safeStorage from "../../utils/safeStorage";
 
-// Gemini API 호출 로직 (원래는 별도 api.js 파일로 분리하는 것이 좋습니다)
-async function callGeminiAPI(systemPrompt, userQuery) {
-    const apiKey = ""; // 실제 앱에서는 백엔드에서 안전하게 처리해야 합니다.
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-    const payload = { 
-        contents: [{ parts: [{ text: userQuery }] }], 
-        systemInstruction: { parts: [{ text: systemPrompt }] }, 
-    };
-    const response = await fetch(apiUrl, { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(payload) 
-    });
-    if (!response.ok) throw new Error(`API call failed: ${response.status}`);
-    const result = await response.json();
-    return result.candidates?.[0]?.content?.parts?.[0]?.text;
-}
+/**
+ * Props:
+ *  - xrayId:        선택된 X-ray ID (App.js에서 전달)
+ *  - currentUser:   로그인 사용자 정보 (선택)
+ *  - onNavigate:    페이지 전환 핸들러 (App.js의 handleNavigate)
+ *
+ * 동작:
+ *  - 마운트/ID 변경 시 자동으로 백엔드에 분석을 요청하고 결과를 표시
+ *  - 백엔드 엔드포인트는 아래 ENDPOINTS 중 실제 사용 중인 것으로 맞춰서 쓰세요.
+ */
+function Diagnosis({ xrayId, currentUser, onNavigate }) {
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+  const [result, setResult] = useState(null);
 
-function Diagnosis({ xrayId }) { // xrayId를 prop으로 받습니다.
-    const [imageFile, setImageFile] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [analysisResult, setAnalysisResult] = useState(null);
-    const [summaryResult, setSummaryResult] = useState(null);
-    const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  // --- 🔧 여기에 실제 백엔드 엔드포인트를 맞추세요 ---
+  // ① POST by-id (추천: 명확)
+  // ② GET result?id= (이미 분석된 결과를 조회하는 스타일)
+  const ENDPOINTS = useMemo(
+    () => ({
+      POST_ANALYZE_BY_ID: "/api/analyze/by-id",
+      GET_RESULT_BY_ID: (id) =>
+        `/api/analyze/result?xrayId=${encodeURIComponent(id)}`,
+    }),
+    []
+  );
 
-    useEffect(() => {
-        if (xrayId) {
-            // xrayId가 있으면, 해당 ID로 판독 정보를 불러옵니다.
-            // 지금은 실제 API가 없으므로 더미 데이터로 시뮬레이션합니다.
-            setIsLoading(true);
-            setTimeout(() => {
-                setImageFile(placeholderImage);
-                setAnalysisResult({ isPneumonia: true, confidence: 0.92 });
-                setSummaryResult(`X-Ray ID: ${xrayId}\n\n**Findings:**\n- Opacity in the right lower lobe.\n\n**Impression:**\n- Findings are consistent with pneumonia.`);
-                setIsLoading(false);
-            }, 1000);
+  // 토큰 헤더(있으면 자동 첨부) — 프로젝트에 맞게 키 이름을 조정
+  const authHeaders = useMemo(() => {
+    const token =
+      safeStorage.getItem("accessToken") || safeStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }, []);
+
+  const analyzeById = useCallback(
+    async (id, signal) => {
+      // ⚠️ 실제 응답 스키마에 맞게 파싱 로직을 조정하세요.
+      // 기대 예시:
+      // { pred: "PNEUMONIA", prob: 0.83, overlayUrl: "...", originalUrl: "..." }
+      // 또는 { data: { ... } }
+      // 또는 { result: { ... } }
+      // 아래는 ①POST → 실패 시 ②GET로 폴백하는 패턴입니다.
+
+      // ① POST /api/analyze/by-id
+      try {
+        const res = await fetch(ENDPOINTS.POST_ANALYZE_BY_ID, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...authHeaders,
+          },
+          body: JSON.stringify({ xrayId: id }),
+          signal,
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          return (
+            data?.result ||
+            data?.data ||
+            data || {
+              pred: data?.pred,
+              prob: data?.prob,
+              overlayUrl: data?.overlayUrl,
+              originalUrl: data?.originalUrl,
+            }
+          );
         }
-    }, [xrayId]);
+        // 이어서 GET으로 폴백
+      } catch (e) {
+        if (e.name === "AbortError") throw e;
+        // 폴백 진행
+      }
 
-    const handleImageSelect = (file) => {
-        setImageFile(file);
-        setAnalysisResult(null);
-        setSummaryResult(null);
-    };
+      // ② GET /api/analyze/result?xrayId=...
+      const res2 = await fetch(ENDPOINTS.GET_RESULT_BY_ID(id), {
+        method: "GET",
+        headers: {
+          ...authHeaders,
+        },
+        signal,
+      });
 
-    const handleAnalyze = () => {
-        setIsLoading(true);
-        setAnalysisResult(null);
-        setTimeout(() => {
-            const isPneumonia = Math.random() > 0.5;
-            const confidence = Math.random() * (0.99 - 0.85) + 0.85;
-            setAnalysisResult({ isPneumonia, confidence });
-            setIsLoading(false);
-        }, 2500);
-    };
-    
-    const handleGenerateSummary = async () => {
-        if (!analysisResult) return;
-        setIsSummaryLoading(true);
-        setSummaryResult(null);
-        const { isPneumonia, confidence } = analysisResult;
-        const resultString = isPneumonia ? "Pneumonia Suspected" : "Normal";
-        const confidencePercent = (confidence * 100).toFixed(1);
-        const systemPrompt = `You are a medical AI assistant specializing in radiology. Based on the analysis result of a chest X-ray, generate a brief, professional-looking report. The report should include a "Findings" section and an "Impression" section. The language must be concise and formal. Do not add any extra information or disclaimers.`;
-        const userQuery = `Analysis Result: ${resultString}, Confidence Score: ${confidencePercent}%. Generate the report.`;
-        try {
-            const text = await callGeminiAPI(systemPrompt, userQuery);
-            setSummaryResult(text);
-        } catch (error) {
-            setSummaryResult("오류가 발생하여 소견을 생성할 수 없습니다.");
-            console.error(error);
-        } finally {
-            setIsSummaryLoading(false);
+      if (!res2.ok) {
+        const txt = await res2.text().catch(() => "");
+        throw new Error(txt || "분석 요청 실패 (GET 폴백)");
+      }
+      const data2 = await res2.json();
+
+      return (
+        data2?.result ||
+        data2?.data ||
+        data2 || {
+          pred: data2?.pred,
+          prob: data2?.prob,
+          overlayUrl: data2?.overlayUrl,
+          originalUrl: data2?.originalUrl,
         }
-    };
+      );
+    },
+    [ENDPOINTS, authHeaders]
+  );
 
-    return (
-        <div className="w-full max-w-4xl mx-auto">
-             <header className="text-center mb-8">
-                <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">
-                    AI 폐렴 진단 어시스턴트
-                </h1>
-                <p className="text-gray-400 mt-2 max-w-2xl mx-auto">
-                    {xrayId ? `X-Ray ID: ${xrayId}에 대한 판독 정보입니다.` : '흉부 X-ray 이미지를 업로드하여 폐렴 가능성을 확인해 보세요.'}
-                </p>
-            </header>
-            <main className="w-full glassmorphism rounded-2xl shadow-lg p-6 sm:p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    <ImageUploader 
-                        onImageSelect={handleImageSelect}
-                        onAnalyze={handleAnalyze}
-                        isLoading={isLoading}
-                        imageFile={imageFile}
-                    />
-                    <ResultCard 
-                        analysisResult={analysisResult}
-                        summaryResult={summaryResult}
-                        onGenerateSummary={handleGenerateSummary}
-                        isSummaryLoading={isSummaryLoading}
-                    />
-                </div>
-            </main>
+  // 마운트/ID 변경 시 자동 분석
+  useEffect(() => {
+    if (!xrayId) return;
+    let isActive = true;
+    const ac = new AbortController();
+
+    (async () => {
+      try {
+        setErr(null);
+        setLoading(true);
+        const payload = await analyzeById(xrayId, ac.signal);
+        if (!isActive) return;
+
+        // 정규화: 누락 필드 대비 기본값
+        const normalized = {
+          xrayId,
+          pred: payload?.pred ?? "-",
+          prob: typeof payload?.prob === "number" ? payload.prob : null,
+          overlayUrl: payload?.overlayUrl ?? null,
+          originalUrl: payload?.originalUrl ?? null,
+          camLayer: payload?.camLayer ?? null,
+          threshold: payload?.threshold ?? null,
+          raw: payload,
+        };
+        setResult(normalized);
+      } catch (e) {
+        if (e.name !== "AbortError") {
+          setErr(e?.message || "분석 중 오류가 발생했습니다.");
+        }
+      } finally {
+        if (isActive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      isActive = false;
+      ac.abort();
+    };
+  }, [xrayId, analyzeById]);
+
+  const handleRetry = async () => {
+    if (!xrayId) return;
+    setResult(null);
+    setErr(null);
+    setLoading(true);
+
+    const ac = new AbortController();
+    try {
+      const payload = await analyzeById(xrayId, ac.signal);
+      const normalized = {
+        xrayId,
+        pred: payload?.pred ?? "-",
+        prob: typeof payload?.prob === "number" ? payload.prob : null,
+        overlayUrl: payload?.overlayUrl ?? null,
+        originalUrl: payload?.originalUrl ?? null,
+        camLayer: payload?.camLayer ?? null,
+        threshold: payload?.threshold ?? null,
+        raw: payload,
+      };
+      setResult(normalized);
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        setErr(e?.message || "재실행 중 오류가 발생했습니다.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const goList = () => onNavigate?.("diagnosis-list");
+
+  return (
+    <div className="text-white">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">X-ray 분석 결과</h1>
+        <div className="flex gap-2">
+          <button
+            onClick={goList}
+            className="px-3 py-2 rounded bg-gray-700 hover:bg-gray-600"
+          >
+            목록으로
+          </button>
+          <button
+            onClick={handleRetry}
+            disabled={!xrayId || loading}
+            className={`px-3 py-2 rounded ${
+              loading
+                ? "bg-gray-700 cursor-not-allowed"
+                : "bg-cyan-600 hover:bg-cyan-500"
+            }`}
+          >
+            {loading ? "분석 중..." : "다시 분석"}
+          </button>
         </div>
-    );
+      </div>
+
+      <div className="text-sm text-gray-300 mb-4">
+        X-ray ID: <span className="font-mono">{xrayId ?? "-"}</span>
+        {currentUser?.memberName && (
+          <span className="ml-3">
+            · 사용자: <b>{currentUser.memberName}</b>
+          </span>
+        )}
+      </div>
+
+      {err && (
+        <div className="p-3 mb-4 rounded bg-red-900/40 text-red-300">{err}</div>
+      )}
+
+      {result && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <div className="p-4 rounded bg-gray-800/60">
+              <div className="text-gray-400 text-sm mb-2">예측</div>
+              <div className="text-xl">
+                {result.pred}{" "}
+                {typeof result.prob === "number" && (
+                  <span className="text-gray-400 text-base ml-2">
+                    ({(result.prob * 100).toFixed(1)}%)
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-gray-500 mt-2 space-x-3">
+                {result.camLayer && <span>CAM: {result.camLayer}</span>}
+                {result.threshold != null && (
+                  <span>th: {String(result.threshold)}</span>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 rounded bg-gray-800/60">
+              <div className="text-gray-400 text-sm mb-2">원본 이미지</div>
+              {result.originalUrl ? (
+                <img
+                  src={result.originalUrl}
+                  alt="original"
+                  className="rounded-lg w-full max-h-[480px] object-contain bg-black"
+                />
+              ) : (
+                <div className="text-gray-500 text-sm">
+                  원본 이미지가 없습니다.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="p-4 rounded bg-gray-800/60">
+            <div className="text-gray-400 text-sm mb-2">Grad-CAM Overlay</div>
+            {result.overlayUrl ? (
+              <img
+                src={result.overlayUrl}
+                alt="overlay"
+                className="rounded-lg w-full max-h-[640px] object-contain bg-black"
+              />
+            ) : (
+              <div className="text-gray-500 text-sm">
+                오버레이 이미지가 없습니다.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!loading && !err && !result && (
+        <div className="text-gray-400">분석 결과가 아직 없습니다.</div>
+      )}
+    </div>
+  );
 }
 
 export default Diagnosis;

@@ -1,27 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 // 예시용 데이터입니다. 실제 애플리케이션에서는 API를 통해 받아오는 데이터로 대체해야 합니다.
 const initialDiagnosisData = [
   {
-    xrayId: '5012',
-    patientId: '100023',
-    uploader: 'xray01',
-    registrationDate: '2025-09-30',
-    status: 'PENDING',
+    xrayId: "5012",
+    patientId: "100023",
+    uploader: "xray01",
+    registrationDate: "2025-09-30",
+    status: "PENDING",
   },
   {
-    xrayId: '5013',
-    patientId: '100024',
-    uploader: 'xray02',
-    registrationDate: '2025-09-30',
-    status: 'PENDING',
+    xrayId: "5013",
+    patientId: "100024",
+    uploader: "xray02",
+    registrationDate: "2025-09-30",
+    status: "PENDING",
   },
   {
-    xrayId: '5014',
-    patientId: '100025',
-    uploader: 'xray01',
-    registrationDate: '2025-10-01',
-    status: 'COMPLETED', // 판독 완료된 항목 추가
+    xrayId: "5014",
+    patientId: "100025",
+    uploader: "xray01",
+    registrationDate: "2025-10-01",
+    status: "COMPLETED", // 판독 완료된 항목 추가
   },
 ];
 
@@ -29,54 +29,69 @@ function DiagnosisList({ onNavigate }) {
   const [diagnosisData, setDiagnosisData] = useState(initialDiagnosisData);
 
   // 필터 상태 관리
-  const [patientIdFilter, setPatientIdFilter] = useState('');
-  const [uploaderFilter, setUploaderFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [patientIdFilter, setPatientIdFilter] = useState("");
+  const [uploaderFilter, setUploaderFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const getStatusChip = (status) => {
     switch (status) {
-      case 'PENDING':
-        return <span className="bg-yellow-900 text-yellow-300 text-xs font-semibold px-3 py-1 rounded-full">PENDING</span>;
-      case 'COMPLETED':
-        return <span className="bg-green-900 text-green-300 text-xs font-semibold px-3 py-1 rounded-full">COMPLETED</span>;
+      case "PENDING":
+        return (
+          <span className="bg-yellow-900 text-yellow-300 text-xs font-semibold px-3 py-1 rounded-full">
+            PENDING
+          </span>
+        );
+      case "COMPLETED":
+        return (
+          <span className="bg-green-900 text-green-300 text-xs font-semibold px-3 py-1 rounded-full">
+            COMPLETED
+          </span>
+        );
       default:
-        return <span className="bg-gray-700 text-gray-300 text-xs font-semibold px-3 py-1 rounded-full">{status}</span>;
+        return (
+          <span className="bg-gray-700 text-gray-300 text-xs font-semibold px-3 py-1 rounded-full">
+            {status}
+          </span>
+        );
     }
   };
 
   const getStatusButtonClass = (filterName) => {
     return `px-4 py-2 rounded-lg font-semibold transition-colors duration-200 w-full ${
       statusFilter === filterName
-        ? 'bg-blue-600 text-white'
-        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+        ? "bg-blue-600 text-white"
+        : "bg-gray-700 hover:bg-gray-600 text-gray-300"
     }`;
   };
 
   // 여러 필터 조건에 따라 데이터를 필터링합니다.
   const filteredData = diagnosisData
-    .filter(item => 
+    .filter((item) =>
       item.patientId.toLowerCase().includes(patientIdFilter.toLowerCase())
     )
-    .filter(item => 
+    .filter((item) =>
       item.uploader.toLowerCase().includes(uploaderFilter.toLowerCase())
     )
-    .filter(item => 
-      item.registrationDate.includes(dateFilter)
-    )
-    .filter(item => {
-      if (statusFilter === 'ALL') return true;
+    .filter((item) => item.registrationDate.includes(dateFilter))
+    .filter((item) => {
+      if (statusFilter === "ALL") return true;
       return item.status === statusFilter;
     });
 
   return (
     <div className="bg-[#1a202c] text-white p-8 rounded-lg min-h-screen">
       <h1 className="text-2xl font-bold mb-6">판독 리스트</h1>
-      
+
       {/* 필터 컨트롤 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 bg-gray-800/50 rounded-lg">
         <div>
-          <label htmlFor="patientId" className="block text-sm font-medium text-gray-400 mb-1">환자 ID</label>
+          <label
+            htmlFor="patientId"
+            className="block text-sm font-medium text-gray-400 mb-1"
+          >
+            환자 ID
+          </label>
           <input
             id="patientId"
             type="text"
@@ -87,7 +102,12 @@ function DiagnosisList({ onNavigate }) {
           />
         </div>
         <div>
-          <label htmlFor="uploader" className="block text-sm font-medium text-gray-400 mb-1">업로더</label>
+          <label
+            htmlFor="uploader"
+            className="block text-sm font-medium text-gray-400 mb-1"
+          >
+            업로더
+          </label>
           <input
             id="uploader"
             type="text"
@@ -98,7 +118,12 @@ function DiagnosisList({ onNavigate }) {
           />
         </div>
         <div>
-          <label htmlFor="regDate" className="block text-sm font-medium text-gray-400 mb-1">등록일</label>
+          <label
+            htmlFor="regDate"
+            className="block text-sm font-medium text-gray-400 mb-1"
+          >
+            등록일
+          </label>
           <input
             id="regDate"
             type="date"
@@ -108,15 +133,26 @@ function DiagnosisList({ onNavigate }) {
           />
         </div>
         <div className="flex flex-col">
-          <label className="block text-sm font-medium text-gray-400 mb-1">상태</label>
+          <label className="block text-sm font-medium text-gray-400 mb-1">
+            상태
+          </label>
           <div className="flex items-center justify-around space-x-2 bg-gray-700 p-1 rounded-lg h-full">
-            <button onClick={() => setStatusFilter('ALL')} className={getStatusButtonClass('ALL')}>
+            <button
+              onClick={() => setStatusFilter("ALL")}
+              className={getStatusButtonClass("ALL")}
+            >
               전체
             </button>
-            <button onClick={() => setStatusFilter('PENDING')} className={getStatusButtonClass('PENDING')}>
+            <button
+              onClick={() => setStatusFilter("PENDING")}
+              className={getStatusButtonClass("PENDING")}
+            >
               PENDING
             </button>
-            <button onClick={() => setStatusFilter('COMPLETED')} className={getStatusButtonClass('COMPLETED')}>
+            <button
+              onClick={() => setStatusFilter("COMPLETED")}
+              className={getStatusButtonClass("COMPLETED")}
+            >
               COMPLETED
             </button>
           </div>
@@ -144,14 +180,22 @@ function DiagnosisList({ onNavigate }) {
               </tr>
             ) : (
               filteredData.map((item) => (
-                <tr key={item.xrayId} className="border-b border-gray-700 hover:bg-gray-800 transition-colors duration-200">
+                <tr
+                  key={item.xrayId}
+                  className="border-b border-gray-700 hover:bg-gray-800 transition-colors duration-200"
+                >
                   <td className="p-4">{item.xrayId}</td>
                   <td className="p-4">{item.patientId}</td>
                   <td className="p-4">{item.uploader}</td>
                   <td className="p-4">{item.registrationDate}</td>
                   <td className="p-4">{getStatusChip(item.status)}</td>
                   <td className="p-4 text-right">
-                    <button onClick={() => onNavigate('view-diagnosis', { xrayId: item.xrayId })} className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-5 rounded">
+                    <button
+                      onClick={() =>
+                        onNavigate("view-diagnosis", { xrayId: item.xrayId })
+                      }
+                      className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-5 rounded"
+                    >
                       열기
                     </button>
                   </td>
