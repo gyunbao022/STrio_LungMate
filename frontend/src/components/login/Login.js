@@ -61,7 +61,7 @@ function Login({ onLogin, onNavigate }) {
                 localStorage.setItem("userId", response.data.userId);
                 localStorage.setItem("userName", response.data.userName);
                 localStorage.setItem("roleCd", response.data.roleCd);
-                
+                localStorage.setItem("email", response.data.email);
                 localStorage.setItem("isLogin", true);
                 return response;
                 })
@@ -69,9 +69,21 @@ function Login({ onLogin, onNavigate }) {
                     login(); // Context 상태변경
                     setInputs({ userId: "", passwd: "" });
                     //window.location.replace("/");
-                    onLogin({ memberName: response.data.userName, role: response.data.roleCd });
+                    const userData = {
+                        memberId: response.data.userId,
+                        memberName: response.data.userName,
+                        role: response.data.roleCd,
+                        email: response.data.email,
+                    };                    
+                    onLogin(userData);
                 })
-                .catch((error) => alert("로그인 실패1 : 아이디 또는 비밀번호 확인"));
+                .catch((error) => {
+                      if (error.response && error.response.status === 401) {
+                          setError("아이디 또는 비밀번호가 일치하지 않습니다.");
+                      } else {
+                          setError("로그인 중 오류가 발생했습니다.");
+                      }
+                });
         } catch (err) {
             alert("로그인 실패2 : 아이디 또는 비밀번호 확인");
         }
