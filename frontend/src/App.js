@@ -24,6 +24,8 @@ function App() {
     const [currentPage, setCurrentPage] = useState('main');
     const [currentUser, setCurrentUser] = useState(null);
     const [selectedXrayId, setSelectedXrayId] = useState(null);
+    const [selectedNotice, setSelectedNotice] = useState(null);
+
 
     // 새로고침 시 localStorage에서 사용자 정보 복원
     useEffect(() => {
@@ -58,6 +60,11 @@ function App() {
         if (payload && payload.xrayId) {
             setSelectedXrayId(payload.xrayId);
         }
+        if (payload && payload.notice) {
+            setSelectedNotice(payload.notice);
+        } else {
+            setSelectedNotice(null);
+        }
     };
 
     const renderPage = () => {
@@ -82,7 +89,7 @@ function App() {
             case 'logout':
                 return <Logout onNavigate={handleNavigate} onLogout={handleLogout} />;
             case 'notice':
-                return <Notice currentUser={currentUser} />;
+                return <Notice currentUser={currentUser} initialNotice={selectedNotice} />;
             case 'profile':
                 return <Profile currentUser={currentUser} setCurrentUser={setCurrentUser} />;
             case 'members':

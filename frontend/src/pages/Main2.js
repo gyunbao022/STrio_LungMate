@@ -58,7 +58,7 @@ function Main2({ currentUser, onNavigate }) {
                                     {notices.map(notice => (
                                         <li key={notice.noticeId}
                                          className="py-3 flex justify-between items-center">
-                                            <button onClick={() => onNavigate('notice')}
+                                            <button onClick={() => onNavigate('notice', { notice: notice })}
                                              className="text-gray-300 hover:text-white text-left truncate"
                                               title={notice.title}>
                                                 {notice.title}

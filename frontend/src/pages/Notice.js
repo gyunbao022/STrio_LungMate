@@ -3,8 +3,8 @@ import axios from 'axios';
 
 const API_BASE_URL = "http://localhost:8090";
 
-function Notice({ currentUser }) {
-    const [selectedNotice, setSelectedNotice] = useState(null);
+function Notice({ currentUser, initialNotice }) {
+    const [selectedNotice, setSelectedNotice] = useState(initialNotice || null);
     const [notices, setNotices] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
