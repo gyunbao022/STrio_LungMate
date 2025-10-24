@@ -10,44 +10,40 @@ import safeStorage from "../../utils/safeStorage";
  *
  * 동작:
  *  - 마운트/ID 변경 시 자동으로 백엔드에 분석을 요청하고 결과를 표시
- *  - 백엔드 엔드포인트는 아래 ENDPOINTS 중 실제 사용 중인 것으로 맞춰서 쓰세요.
+ *  - 백엔드 엔드포인트는 스프링부트(API 게이트웨이)로 향합니다.
  */
+
+const BASE = process.env.REACT_APP_API_BASE || "http://localhost:8090"; // 스프링 포트
+const API_PREFIX = process.env.REACT_APP_API_PREFIX || ""; // ex) "", "/diagnosis"
+
 function Diagnosis({ xrayId, currentUser, onNavigate }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
   const [result, setResult] = useState(null);
 
-  // --- 🔧 여기에 실제 백엔드 엔드포인트를 맞추세요 ---
-  // ① POST by-id (추천: 명확)
-  // ② GET result?id= (이미 분석된 결과를 조회하는 스타일)
+  // --- 실제 백엔드 엔드포인트 ---
   const ENDPOINTS = useMemo(
     () => ({
-      POST_ANALYZE_BY_ID: "/api/analyze/by-id",
+      POST_ANALYZE_BY_ID: `${API_PREFIX}/api/analyze/by-id`,
       GET_RESULT_BY_ID: (id) =>
-        `/api/analyze/result?xrayId=${encodeURIComponent(id)}`,
+        `${API_PREFIX}/api/analyze/result?xrayId=${encodeURIComponent(id)}`,
     }),
     []
   );
 
-  // 토큰 헤더(있으면 자동 첨부) — 프로젝트에 맞게 키 이름을 조정
+  // 토큰 헤더(있으면 자동 첨부)
   const authHeaders = useMemo(() => {
     const token =
       safeStorage.getItem("accessToken") || safeStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   }, []);
 
+  // X-ray 분석 요청 함수
   const analyzeById = useCallback(
     async (id, signal) => {
-      // ⚠️ 실제 응답 스키마에 맞게 파싱 로직을 조정하세요.
-      // 기대 예시:
-      // { pred: "PNEUMONIA", prob: 0.83, overlayUrl: "...", originalUrl: "..." }
-      // 또는 { data: { ... } }
-      // 또는 { result: { ... } }
-      // 아래는 ①POST → 실패 시 ②GET로 폴백하는 패턴입니다.
-
-      // ① POST /api/analyze/by-id
       try {
-        const res = await fetch(ENDPOINTS.POST_ANALYZE_BY_ID, {
+        // ① POST /api/analyze/by-id
+        const res = await fetch(BASE + ENDPOINTS.POST_ANALYZE_BY_ID, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -70,18 +66,15 @@ function Diagnosis({ xrayId, currentUser, onNavigate }) {
             }
           );
         }
-        // 이어서 GET으로 폴백
       } catch (e) {
         if (e.name === "AbortError") throw e;
-        // 폴백 진행
+        // POST 실패 시 GET으로 폴백
       }
 
       // ② GET /api/analyze/result?xrayId=...
-      const res2 = await fetch(ENDPOINTS.GET_RESULT_BY_ID(id), {
+      const res2 = await fetch(BASE + ENDPOINTS.GET_RESULT_BY_ID(id), {
         method: "GET",
-        headers: {
-          ...authHeaders,
-        },
+        headers: { ...authHeaders },
         signal,
       });
 
@@ -118,7 +111,7 @@ function Diagnosis({ xrayId, currentUser, onNavigate }) {
         const payload = await analyzeById(xrayId, ac.signal);
         if (!isActive) return;
 
-        // 정규화: 누락 필드 대비 기본값
+        // 정규화
         const normalized = {
           xrayId,
           pred: payload?.pred ?? "-",
@@ -150,8 +143,8 @@ function Diagnosis({ xrayId, currentUser, onNavigate }) {
     setResult(null);
     setErr(null);
     setLoading(true);
-
     const ac = new AbortController();
+
     try {
       const payload = await analyzeById(xrayId, ac.signal);
       const normalized = {
