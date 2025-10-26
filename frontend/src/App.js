@@ -16,6 +16,7 @@ import DiagnosisList from './pages/DiagnosisList';
 import UploadHistory from './pages/UploadHistory';
 import Diagnosis from './components/diagnosis/Diagnosis';
 import { AuthProvider } from "./components/layout/AuthProvider";
+import ResetPassword from './components/login/ResetPassword';
 //import BaseLayout from "./components/layout/BaseLayout";
 //import ProtectedRoute from "./components/layout/ProtectedRoute"; // 로그인 보호된 라우트
 
@@ -32,6 +33,13 @@ function App() {
         const storedRoleCd = localStorage.getItem("roleCd");
         const storedEmail = localStorage.getItem("email");
         const isLogin = localStorage.getItem("isLogin");
+
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+        if (token) {
+            // reset-password 페이지로 이동하고 token 전달
+            setCurrentPage('reset-password');
+        }
 
         if (isLogin && storedUserId && storedUserName && storedRoleCd) {
             setCurrentUser({
@@ -71,6 +79,8 @@ function App() {
                     return <SignUp onNavigate={handleNavigate} />;
                 case 'find-account':
                     return <FindAccount onNavigate={handleNavigate} />;
+                case 'reset-password':
+                    return <ResetPassword onNavigate={handleNavigate} />;  // ✅ 추가    
                 case 'main':
                 default:
                     return <Main1 />;
